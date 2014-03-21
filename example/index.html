@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Volviz - The Volume Visualizer</title>
+    <meta charset="utf-8">
+    <style>
+
+      path {
+        stroke: #fff;
+        fill-rule: evenodd;
+        opacity: 0.8;
+      }
+
+      path:hover {
+        fill: #f00;
+        opacity: 1;
+      }
+
+      svg {
+        margin-left: auto;
+        margin-right: auto;
+        display: block;
+      }
+
+
+      .tooltip, .tooltip-pending-removal {
+        position: absolute;
+        background-color: rgba(255,255,255,1);
+        padding: 10px;
+        border: 1px solid #ddd;
+        z-index: 10000;
+        display: inline-block;
+        font-family: Arial;
+        font-size: 13px;
+        border-radius: 10px;
+
+        pointer-events: none;
+
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .tooltip {
+
+        transition: opacity 500ms linear;
+        -webkit-transition: opacity 500ms linear;
+
+        transition-delay: 500ms;
+        -webkit-transition-delay: 500ms;
+
+        -moz-box-shadow: 4px 4px 8px rgba(0,0,0,.5);
+        -webkit-box-shadow: 4px 4px 8px rgba(0,0,0,.5);
+        box-shadow: 4px 4px 8px rgba(0,0,0,.5);
+
+      }
+    </style>
+  </head>
+  <body>
+    <center id="header">
+      <h1>Volume Visualizer</h1>
+      <h2>Data for volume "<span id="volname"></span>"</h2>
+    </center>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script>
+
+      function urlObject(options) {
+        var url_search_arr,
+        option_key,
+        i,
+        urlObj,
+        get_param,
+        key,
+        val,
+        url_query,
+        url_get_params = {},
+        a = document.createElement('a'),
+        default_options = {
+          'url': window.location.href,
+          'unescape': true,
+          'convert_num': true
+        };
+
+        if (typeof options !== "object") {
+          options = default_options;
+          } else {
+          for (option_key in default_options) {
+            if (default_options.hasOwnProperty(option_key)) {
+              if (options[option_key] === undefined) {
+                options[option_key] = default_options[option_key];
+              }
+            }
+          }
+        }
+
+        a.href = options.url;
+        url_query = a.search.substring(1);
+        url_search_arr = url_query.split('&');
+
+        if (url_search_arr[0].length > 1) {
+          for (i = 0; i < url_search_arr.length; i += 1) {
+            get_param = url_search_arr[i].split("=");
+
+            if (options.unescape) {
+              key = decodeURI(get_param[0]);
+              val = decodeURI(get_param[1]);
+              } else {
+              key = get_param[0];
+              val = get_param[1];
+            }
+
+            if (options.convert_num) {
+              if (val.match(/^\d+$/)) {
+                val = parseInt(val, 10);
+                } else if (val.match(/^\d+\.\d+$/)) {
+                val = parseFloat(val);
+              }
+            }
+
+            if (url_get_params[key] === undefined) {
+              url_get_params[key] = val;
+              } else if (typeof url_get_params[key] === "string") {
+              url_get_params[key] = [url_get_params[key], val];
+              } else {
+              url_get_params[key].push(val);
+            }
+
+            get_param = [];
+          }
+        }
+
+        urlObj = {
+          protocol: a.protocol,
+          hostname: a.hostname,
+          host: a.host,
+          port: a.port,
+          hash: a.hash.substr(1),
+          pathname: a.pathname,
+          search: a.search,
+          parameters: url_get_params
+        };
+
+        return urlObj;
+      }
+      /*****
+      * A no frills tooltip implementation.
+      *****/
+
+      (function() {
+
+        var tooltip = window.tooltip = {}
+
+        tooltip.show = function(pos, content, gravity, dist, parentContainer, classes) {
+
+          var container = d3.select('body').selectAll('.tooltip').data([1])
+
+          container.enter().append('div').attr('class', 'tooltip ' + (classes ? classes : 'xy-tooltip'))
+
+          container.html(content)
+
+          gravity = gravity || 'n'
+          dist = dist || 20
+
+          var body = document.getElementsByTagName('body')[0]
+
+          var height = parseInt(container[0][0].offsetHeight)
+          , width = parseInt(container[0][0].offsetWidth)
+          , windowWidth = window.innerWidth
+          , windowHeight = window.innerHeight
+          , scrollTop = body.scrollTop
+          , scrollLeft = body.scrollLeft
+          , left = 0
+          , top = 0
+
+
+          switch (gravity) {
+            case 'e':
+            left = pos[0] - width - dist
+            top = pos[1] - (height / 2)
+            if (left < scrollLeft) left = pos[0] + dist
+            if (top < scrollTop) top = scrollTop + 5
+            if (top + height > scrollTop + windowHeight) top = scrollTop - height - 5
+            break
+            case 'w':
+            left = pos[0] + dist
+            top = pos[1] - (height / 2)
+            if (left + width > windowWidth) left = pos[0] - width - dist
+            if (top < scrollTop) top = scrollTop + 5
+            if (top + height > scrollTop + windowHeight) top = scrollTop - height - 5
+            break
+            case 's':
+            left = pos[0] - (width / 2)
+            top = pos[1] + dist
+            if (left < scrollLeft) left = scrollLeft + 5
+            if (left + width > windowWidth) left = windowWidth - width - 5
+            if (top + height > scrollTop + windowHeight) top = pos[1] - height - dist
+            break
+            case 'n':
+            left = pos[0] - (width / 2)
+            top = pos[1] - height - dist
+            if (left < scrollLeft) left = scrollLeft + 5
+            if (left + width > windowWidth) left = windowWidth - width - 5
+            if (scrollTop > top) top = pos[1] + 20
+            break
+          }
+
+
+          container.style('left', left+'px')
+          container.style('top', top+'px')
+
+          return container
+        }
+
+        tooltip.cleanup = function() {
+          // Find the tooltips, mark them for removal by this class (so other tooltip functions won't find it)
+          var tooltips = d3.selectAll('.tooltip').attr('class','tooltip-pending-removal').transition().duration(250).style('opacity',0).remove()
+
+        }
+      })();
+
+      var width = 960,
+      height = 960,
+      radius = Math.min(width, height) / 2 * 0.9;
+
+      var x = d3.scale.linear()
+      .range([0, 2 * Math.PI]);
+
+      var y = d3.scale.sqrt()
+      .range([0, radius]);
+
+
+      var svg = d3.select("body").append("svg")
+      .attr("width", width)
+      .attr("height", height)
+      .append("g")
+      .attr("transform", "translate(" + width / 2 + "," + (height / 2 + 10) + ")");
+
+      var partition = d3.layout.partition()
+      .value(function(d) { return d.size; });
+
+      var arc = d3.svg.arc()
+      .startAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x)))})
+      .endAngle(function(d) { return Math.max(0, Math.min(2 * Math.PI, x(d.x + d.dx)))})
+      .innerRadius(function(d) { return Math.max(0, y(d.y)) + 0.5;})
+      .outerRadius(function(d) { return Math.max(0, y(d.y + d.dy)) - 0.5; });
+
+      d3.select(self.frameElement).style("height", height + "px");
+
+      // Interpolate the scales!
+      function arcTween(d) {
+        var xd = d3.interpolate(x.domain(), [d.x, d.x + d.dx]),
+        yd = d3.interpolate(y.domain(), [d.y, 1]),
+        yr = d3.interpolate(y.range(), [d.y ? 20 : 0, radius]);
+        return function(d, i) {
+          return i
+          ? function(t) { return arc(d); }
+          : function(t) { x.domain(xd(t)); y.domain(yd(t)).range(yr(t)); return arc(d); };
+        };
+      }
+
+      colors = {
+        "container": "#000099",
+        "free": "#cccccc",
+        "filesystem": "#0066cc",
+        "snapshot": "#3399ff",
+        "volume": "#ff6666"
+      }
+
+      var color = d3.scale.category20c();
+
+      var colors = {
+        "filesystem": d3.scale.ordinal().range([
+        "#5096ff", "#4c8ef2", "#4887e5", "#4480d9", "#4078cc",
+        "#3c70bf", "#3869b2", "#3461a6", "#305a99", "#2c528c"
+        ]),
+        "container": d3.scale.ordinal().range([
+        "#e5e5e5", "#ebebeb", "#e3e3e3", "#dbdbdb"
+        ]),
+        "snapshot": d3.scale.ordinal().range([
+        "#ff5f25", "#f25a23", "#e55521", "#d9511f"
+        ]),
+        "volume":  d3.scale.ordinal().range([
+        "#3bf0ff"
+        ]),
+        "root": function() { return "#ffffff"; },
+        "free": function() { return "#fdfdfd"; },
+      }
+
+      var color = function(node) {
+        return colors[node.type](node.name);
+      };
+
+      var data = urlObject().parameters.data || "volviz";
+      d3.json(data + ".json", function(error, root) {
+        document.getElementById("volname").innerHTML = root.name; 
+
+        var g = svg.selectAll("g")
+        .data(partition.nodes(root))
+        .enter().append("g");
+
+        var path = g.append("path")
+        .attr("d", arc)
+        .style("fill", function(d) { return color(d); })
+        .on("click", click)
+        .on("mouseover", function(d) {
+          if (d.type != "root") {
+            tooltip.show([d3.event.clientX, d3.event.clientY], 
+            '<div>'+d.name+'</div><div>'+d.size_human+'</div>')
+          };
+        });
+
+        function click(d) {
+          path.transition()
+          .duration(750)
+          .attrTween("d", arcTween(d));
+        }
+      });
+
+    </script>
+  </body>
+</html>

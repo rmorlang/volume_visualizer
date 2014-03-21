@@ -29,8 +29,9 @@ map the size of *files* in a hierarchy of *directories*.
 Volviz maps the size of *filesystems*, *snapshots*, and *volumes*. It
 shows the actual space used on disk, not just the reported size.
 
-## Example
+## Screenshot
 
+![Screenshot](https://raw.githubusercontent.com/rleemorlang/volume_visualizer/master/example/screenshot_scaled.jpg)
 
 ## Status
 
@@ -43,8 +44,8 @@ to, it'll write a JSON file and an HTML file where you tell it to.
 
 ## Compatibility
 
-Only ZFS is supported. It shouldn't be too hard to refactor and add adapters
-for LVM and others.
+**Only ZFS is currently supported**. It shouldn't be too hard to refactor 
+and add adapters for LVM and others.
 
 Only Linux has been tested.
 
@@ -70,9 +71,9 @@ Volviz's default mode will query the first volume it finds, discover where
 all the bytes are, launch an HTTP server and display a URL on the console.
 Navigate to this URL to see the visualization.
 
-*Note:* Volviz needs root privileges to get volume information, and will run
-sudo if necessary. If you don't want to trust Volviz with root, there are
-other ways to run it. Keep reading.
+**Note:** Volviz needs root privileges to get volume information, and will 
+run sudo if necessary. If you don't want to trust Volviz with root, there 
+are other ways to run it. Keep reading.
 
 ### Default (Automatic) Mode
 
@@ -80,6 +81,10 @@ In Automatic Mode, Volviz scans the first volume it finds and starts a web
 server to show you the output. Volviz will output a URL on the console.
 
     > vv
+
+This is a shortcut for the `instaweb` command.
+
+    > vv instaweb
 
 You can specify the volume you want to visualize.
 
@@ -101,19 +106,31 @@ volume if you like.
 Once you're satisfied that the command Volviz suggests is safe, you can run
 it as root yourself and pipe the output into Volviz.
 
-    > zfs ARGS | vv parse
+    > sudo zfs list -t all -H -r \
+      -o name,available,used,referenced,usedbysnapshots,usedbydataset,\
+      usedbychildren,compressratio,type \
+      tank | vv --parse-file - 
+
+Or:
+
+    > sudo zfs list -t all -H -r \
+      -o name,available,used,referenced,usedbysnapshots,usedbydataset,\
+      usedbychildren,compressratio,type \
+      tank > /tmp/zfsdata
+    > vv --parse-file /tmp/zfsdata
 
 ### Static Mode
 
 Volviz's built-in web server is meant for convenience only. You might instead
-want to generate static output that can be served by your own webserver.
+want to generate static output that can be served by a webserver of your 
+choice.
 
     > mkdir /var/www/volviz
-    > vv generate --to-path /var/www/volviz
+    > vv generate --output-path /var/www/volviz
 
 You can use a non-default name for the datafile if you like:
 
-    > vv generate --to-path /var/www/volviz --data-name backup2
+    > vv generate --output-path /var/www/volviz --data-name backup2
 
 You can load alternate datafiles in the Volviz UI by appending
 `?data=backup2` to the URL.
@@ -123,7 +140,7 @@ from cron.
 
 You can combine untrusted and static mode if you like.
 
-    > zfs ARGS | vv parse generate --to-path /var/www/volviz
+    > vv generate --output-path /var/www/volviz --parse-file /tmp/zfsdata
 
 Maybe you have a bunch of hosts and you don't want to install Volviz on
 each one. Generate data to parse and ship it to a central host that has
@@ -136,7 +153,7 @@ some Bash that might be a good starting point.
     echo "<h1>Volviz</h1><ul>" > $DIR
     for DATAFILE in /var/lib/volviz/*; do
       NAME=`basename $DATAFILE`
-      vv generate --to-path $OUTDIR --data-name $NAME < $DATAFILE
+      vv generate --output-path $OUTDIR --data-name $NAME --parse-file $DATAFILE
       echo "<li><a href="index.html?data=$NAME">$NAME</a></li>" >> $DIR
     done
     echo "</ul>" > $DIR

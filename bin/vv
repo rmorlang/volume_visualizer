@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+vv_dir = File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(vv_dir) unless $LOAD_PATH.include?(vv_dir)
+
+require 'volume_visualizer'
+
+VolumeVisualizer::Cli.start
+
