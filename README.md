@@ -33,6 +33,21 @@ shows the actual space used on disk, not just the reported size.
 
 ![Screenshot](https://raw.githubusercontent.com/rleemorlang/volume_visualizer/master/example/screenshot_scaled.jpg)
 
+The blue regions are current data in filesystems. The orange regions are snapshots, and represent data that has since been changed or deleted. The gray regions are parent nodes in the hierarchy.
+
+## Quickstart
+
+    root@fileserver:~# gem install volume_visualizer
+    Fetching: volume_visualizer-0.0.1.gem (100%)
+    Successfully installed volume_visualizer-0.0.1
+    1 gem installed
+    Installing ri documentation for volume_visualizer-0.0.1...
+    Installing RDoc documentation for volume_visualizer-0.0.1...
+
+    root@fileserver:~# vv
+    reading ZFS data
+    server running on http://fileserver:25203
+
 ## Status
 
 Barely alpha. This was hacked together in a day. The HTML/JavaScript/CSS
@@ -171,6 +186,11 @@ You probably figured that out on your own.
 
 Volviz ignores any volume, filesystem, or snapshot with a reported size of
 0 bytes.
+
+## Todo
+
+1. Tests
+2. Cleanup HTML, CSS, JavaScript - refactor into own files
 
 ## Contributing
 
