@@ -112,21 +112,6 @@ module VolumeVisualizer
     method_option :volume, :default => "tank"
     method_option :parse_file, :type => :string
     def instaweb
-      if false && (ENV["USER"] != "root") # && not in parse mode
-        STDERR.puts <<-EOF
-ERROR: Sorry. Instaweb mode requires root privileges, or requires
-  input data to parse. Try one of these:
-
-    sudo vv instaweb
-
-  or 
-
-    sudo `vv show-command` > /tmp/data
-    vv instaweb --parse-file /tmp/data
-        EOF
-        exit 1
-      end
-
       port = nil
       begin
         port = rand(20000) + 20000
@@ -139,7 +124,6 @@ ERROR: Sorry. Instaweb mode requires root privileges, or requires
         puts "ERROR: port #{port} already in use -- retrying"
         retry
       end
-
 
       server.mount_proc "/" do |req, res|
         res.body = File.open(html_source).read
