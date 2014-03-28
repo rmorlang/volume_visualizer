@@ -12,7 +12,7 @@ module VolumeVisualizer
     }
 
     def last_char
-      to_s[length - 1]
+      to_s[-1].chr
     end
 
     def multiplier
